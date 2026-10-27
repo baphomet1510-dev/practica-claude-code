@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f3d2e">
+  <title>Calculadora de comisiones</title>
+  <style>
+    :root {
+      --fondo: #0f3d2e;
+      --tarjeta: #14513d;
+      --crema: #f3e9d2;
+      --crema-oscuro: #e4d6b4;
+      --texto: #f6f1e3;
+      --texto-suave: #b9d0c4;
+      --error: #ffb4a2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--fondo);
+      color: var(--texto);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    main {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin: 0 0 4px;
+    }
+
+    .subtitulo {
+      margin: 0 0 24px;
+      color: var(--texto-suave);
+      font-size: 0.95rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--texto-suave);
+      margin-bottom: 8px;
+    }
+
+    .campo {
+      display: flex;
+      align-items: center;
+      background: var(--tarjeta);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 0 16px;
+    }
+
+    .campo:focus-within { border-color: var(--crema); }
+
+    .campo span {
+      font-size: 1.4rem;
+      color: var(--crema);
+      margin-right: 8px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: var(--texto);
+      font-size: 1.8rem;
+      padding: 16px 0;
+    }
+
+    input::placeholder { color: #6f9a89; }
+
+    .error {
+      min-height: 1.2em;
+      margin: 8px 0 0;
+      color: var(--error);
+      font-size: 0.85rem;
+    }
+
+    .teclado {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    button {
+      background: var(--crema);
+      color: var(--fondo);
+      border: 0;
+      border-radius: 14px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      min-height: 56px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button:active { background: var(--crema-oscuro); transform: scale(0.97); }
+
+    .teclado .accion { font-size: 1rem; }
+
+    .resultado {
+      background: var(--tarjeta);
+      border-radius: 14px;
+      padding: 8px 16px;
+    }
+
+    .fila {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(243, 233, 210, 0.15);
+    }
+
+    .fila:last-child { border-bottom: 0; }
+    .fila .nombre { color: var(--texto-suave); }
+    .fila .valor { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+    .fila.total .nombre { color: var(--texto); font-weight: 600; }
+    .fila.total .valor { font-size: 1.6rem; color: var(--crema); }
+
+    .nota {
+      margin: 12px 0 0;
+      color: var(--texto-suave);
+      font-size: 0.8rem;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Calculadora de comisiones</h1>
+    <p class="subtitulo">Comisión del 6 % con mínimo de S/ 3.00</p>
+
+    <label for="monto">Monto de la venta (soles)</label>
+    <div class="campo">
+      <span>S/</span>
+      <input id="monto" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00">
+    </div>
+    <p class="error" id="error" role="alert"></p>
+
+    <div class="teclado">
+      <button type="button" data-tecla="1">1</button>
+      <button type="button" data-tecla="2">2</button>
+      <button type="button" data-tecla="3">3</button>
+      <button type="button" data-tecla="4">4</button>
+      <button type="button" data-tecla="5">5</button>
+      <button type="button" data-tecla="6">6</button>
+      <button type="button" data-tecla="7">7</button>
+      <button type="button" data-tecla="8">8</button>
+      <button type="button" data-tecla="9">9</button>
+      <button type="button" data-tecla="." aria-label="Punto decimal">.</button>
+      <button type="button" data-tecla="0">0</button>
+      <button type="button" class="accion" id="borrar" aria-label="Borrar último dígito">⌫</button>
+      <button type="button" class="accion" id="limpiar" style="grid-column: 1 / -1;">Limpiar</button>
+    </div>
+
+    <section class="resultado" aria-live="polite">
+      <div class="fila"><span class="nombre">Monto</span><span class="valor" id="r-monto">S/ 0.00</span></div>
+      <div class="fila"><span class="nombre">Comisión</span><span class="valor" id="r-comision">S/ 0.00</span></div>
+      <div class="fila total"><span class="nombre">Total a pagar</span><span class="valor" id="r-total">S/ 0.00</span></div>
+    </section>
+    <p class="nota" id="nota"></p>
+  </main>
+
+  <script>
+    const TASA = 0.06;          // 6 %
+    const MINIMO_CENTIMOS = 300; // S/ 3.00
+
+    const $ = (id) => document.getElementById(id);
+    const inputMonto = $("monto");
+
+    const formato = new Intl.NumberFormat("es-PE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    const soles = (centimos) => "S/ " + formato.format(centimos / 100);
+
+    // Convierte el texto a céntimos enteros (evita errores de decimales en coma flotante).
+    // Devuelve null si el texto no es un monto válido.
+    function leerCentimos(texto) {
+      const limpio = texto.trim().replace(",", ".");
+      if (limpio === "") return 0;
+      if (!/^\d*\.?\d{0,2}$/.test(limpio) || limpio === ".") return null;
+      return Math.round(parseFloat(limpio) * 100);
+    }
+
+    function calcular(montoCentimos) {
+      const comision = Math.max(Math.round(montoCentimos * TASA), MINIMO_CENTIMOS);
+      return { comision, total: montoCentimos + comision };
+    }
+
+    function actualizar() {
+      const monto = leerCentimos(inputMonto.value);
+
+      if (monto === null) {
+        $("error").textContent = "Ingresa un número válido (máximo 2 decimales).";
+        return;
+      }
+      $("error").textContent = "";
+
+      // Sin monto no se cobra comisión mínima: se muestra todo en cero.
+      const { comision, total } = monto > 0 ? calcular(monto) : { comision: 0, total: 0 };
+
+      $("r-monto").textContent = soles(monto);
+      $("r-comision").textContent = soles(comision);
+      $("r-total").textContent = soles(total);
+
+      $("nota").textContent =
+        monto > 0 && comision === MINIMO_CENTIMOS && Math.round(monto * TASA) < MINIMO_CENTIMOS
+          ? "Se aplicó la comisión mínima de S/ 3.00."
+          : "";
+    }
+
+    inputMonto.addEventListener("input", actualizar);
+
+    document.querySelectorAll("[data-tecla]").forEach((boton) => {
+      boton.addEventListener("click", () => {
+        inputMonto.value += boton.dataset.tecla;
+        // Si la tecla produjo un valor inválido (ej. dos puntos), se revierte.
+        if (leerCentimos(inputMonto.value) === null) {
+          inputMonto.value = inputMonto.value.slice(0, -1);
+        }
+        actualizar();
+      });
+    });
+
+    $("borrar").addEventListener("click", () => {
+      inputMonto.value = inputMonto.value.slice(0, -1);
+      actualizar();
+    });
+
+    $("limpiar").addEventListener("click", () => {
+      inputMonto.value = "";
+      actualizar();
+    });
+  </script>
+</body>
+</html>
