@@ -241,14 +241,21 @@
       $("error").textContent = "";
 
       // Sin monto no se cobra comisión mínima: se muestra todo en cero.
-      const { comision, total } = monto > 0 ? calcular(monto) : { comision: 0, total: 0 };
+      const calculo = monto > 0 ? calcular(monto) : { comision: 0, total: 0 };
       const paraVendedor = $("pagador").value === "vendedor";
+      // Si paga el vendedor y la comisión supera la venta, no se calcula nada.
+      const noAlcanza = paraVendedor && calculo.comision > monto;
+      const { comision, total } = noAlcanza ? { comision: 0, total: 0 } : calculo;
+      if (noAlcanza) {
+        $("error").textContent =
+          "Con este monto la comisión mínima supera la venta. El vendedor no puede pagar la comisión.";
+      }
 
       $("r-monto").textContent = soles(monto);
       $("r-comision").textContent = soles(comision);
       // Si paga el vendedor, el comprador paga solo el monto y el vendedor recibe monto - comisión.
-      $("r-total").textContent = soles(paraVendedor ? monto : total);
-      $("fila-vendedor").hidden = !paraVendedor;
+      $("r-total").textContent = soles(paraVendedor && !noAlcanza ? monto : total);
+      $("fila-vendedor").hidden = !paraVendedor || noAlcanza;
       $("r-vendedor").textContent = soles(monto - comision);
 
       $("nota").textContent =
