@@ -63,6 +63,21 @@
 
     .campo:focus-within { border-color: var(--crema); }
 
+    .selector { margin: 0 0 16px; }
+
+    select {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: var(--texto);
+      font-size: 1.1rem;
+      padding: 16px 0;
+    }
+
+    select option { color: var(--fondo); }
+
     .campo span {
       font-size: 1.4rem;
       color: var(--crema);
@@ -126,6 +141,7 @@
       border-bottom: 1px solid rgba(243, 233, 210, 0.15);
     }
 
+    .fila[hidden] { display: none; }
     .fila:last-child { border-bottom: 0; }
     .fila .nombre { color: var(--texto-suave); }
     .fila .valor { font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -169,9 +185,20 @@
       <button type="button" class="accion" id="limpiar" style="grid-column: 1 / -1;">Limpiar</button>
     </div>
 
+    <div class="selector">
+      <label for="pagador">¿Quién paga la comisión?</label>
+      <div class="campo">
+        <select id="pagador">
+          <option value="comprador" selected>Comprador</option>
+          <option value="vendedor">Vendedor</option>
+        </select>
+      </div>
+    </div>
+
     <section class="resultado" aria-live="polite">
       <div class="fila"><span class="nombre">Monto</span><span class="valor" id="r-monto">S/ 0.00</span></div>
       <div class="fila"><span class="nombre">Comisión</span><span class="valor" id="r-comision">S/ 0.00</span></div>
+      <div class="fila" id="fila-vendedor" hidden><span class="nombre">El vendedor recibe</span><span class="valor" id="r-vendedor">S/ 0.00</span></div>
       <div class="fila total"><span class="nombre">Total a pagar</span><span class="valor" id="r-total">S/ 0.00</span></div>
     </section>
     <p class="nota" id="nota"></p>
@@ -214,11 +241,22 @@
       $("error").textContent = "";
 
       // Sin monto no se cobra comisión mínima: se muestra todo en cero.
-      const { comision, total } = monto > 0 ? calcular(monto) : { comision: 0, total: 0 };
+      const calculo = monto > 0 ? calcular(monto) : { comision: 0, total: 0 };
+      const paraVendedor = $("pagador").value === "vendedor";
+      // Si paga el vendedor y la comisión supera la venta, no se calcula nada.
+      const noAlcanza = paraVendedor && calculo.comision > monto;
+      const { comision, total } = noAlcanza ? { comision: 0, total: 0 } : calculo;
+      if (noAlcanza) {
+        $("error").textContent =
+          "Con este monto la comisión mínima supera la venta. El vendedor no puede pagar la comisión.";
+      }
 
       $("r-monto").textContent = soles(monto);
       $("r-comision").textContent = soles(comision);
-      $("r-total").textContent = soles(total);
+      // Si paga el vendedor, el comprador paga solo el monto y el vendedor recibe monto - comisión.
+      $("r-total").textContent = soles(paraVendedor && !noAlcanza ? monto : total);
+      $("fila-vendedor").hidden = !paraVendedor || noAlcanza;
+      $("r-vendedor").textContent = soles(monto - comision);
 
       $("nota").textContent =
         monto > 0 && comision === MINIMO_CENTIMOS && Math.round(monto * TASA) < MINIMO_CENTIMOS
@@ -227,6 +265,7 @@
     }
 
     inputMonto.addEventListener("input", actualizar);
+    $("pagador").addEventListener("change", actualizar);
 
     document.querySelectorAll("[data-tecla]").forEach((boton) => {
       boton.addEventListener("click", () => {
